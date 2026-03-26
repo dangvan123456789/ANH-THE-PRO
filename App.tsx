@@ -27,7 +27,14 @@ export const App: FunctionalComponent = () => {
     const requiredKey = import.meta.env.VITE_APP_ACCESS_KEY;
 
     useEffect(() => {
-        if (!requiredKey || accessKey === requiredKey) {
+        // Lấy mã khóa từ đường link (URL) nếu có
+        const urlParams = new URLSearchParams(window.location.search);
+        const keyFromUrl = urlParams.get('key');
+
+        if (!requiredKey || accessKey === requiredKey || keyFromUrl === requiredKey) {
+            if (keyFromUrl === requiredKey) {
+                localStorage.setItem('app_access_key', keyFromUrl);
+            }
             setIsAuthorized(true);
         } else {
             setIsAuthorized(false);

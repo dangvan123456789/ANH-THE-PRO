@@ -26,24 +26,25 @@ export const App: FunctionalComponent = () => {
 
     const requiredKey = import.meta.env.VITE_APP_ACCESS_KEY;
 
-       useEffect(() => {
-        // 1. Lấy mã khóa từ đường link (URL)
+          useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const keyFromUrl = urlParams.get('key');
+        const savedKey = localStorage.getItem('app_access_key');
 
-        // 2. Nếu có mã trên link và mã đó đúng, thì lưu vào bộ nhớ máy tính
-        if (keyFromUrl && keyFromUrl === requiredKey) {
+        // Nếu mã trên link là V0933676210, cho vào luôn và lưu lại
+        if (keyFromUrl === 'V0933676210') {
             localStorage.setItem('app_access_key', keyFromUrl);
             setAccessKey(keyFromUrl);
             setIsAuthorized(true);
         } 
-        // 3. Nếu không có trên link thì kiểm tra mã đã lưu cũ hoặc mã mặc định
-        else if (!requiredKey || accessKey === requiredKey) {
+        // Nếu không có trên link thì kiểm tra mã đã lưu hoặc mã hệ thống
+        else if (savedKey === requiredKey || !requiredKey || accessKey === requiredKey) {
             setIsAuthorized(true);
         } else {
             setIsAuthorized(false);
         }
     }, [accessKey, requiredKey]);
+
 
     const handleAccessSubmit = (e: Event) => {
         e.preventDefault();

@@ -1,0 +1,7 @@
+{
+  "name": "ẢNH THẺ AI PRO",
+  "description": "",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

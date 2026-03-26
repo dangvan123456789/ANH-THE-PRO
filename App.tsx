@@ -27,10 +27,11 @@ export const App: FunctionalComponent = () => {
     const requiredKey = import.meta.env.VITE_APP_ACCESS_KEY;
 
     useEffect(() => {
-        // Lấy mã khóa từ đường link (URL) nếu có
+        // Tự động lấy mã khóa từ đường link (URL)
         const urlParams = new URLSearchParams(window.location.search);
         const keyFromUrl = urlParams.get('key');
 
+        // Nếu mã khóa trong link khớp với mã cài trên Vercel, cho vào thẳng
         if (!requiredKey || accessKey === requiredKey || keyFromUrl === requiredKey) {
             if (keyFromUrl === requiredKey) {
                 localStorage.setItem('app_access_key', keyFromUrl);

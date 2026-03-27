@@ -26,24 +26,47 @@ export const App: FunctionalComponent = () => {
 
     const requiredKey = import.meta.env.VITE_APP_ACCESS_KEY;
 
-          useEffect(() => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const keyFromUrl = urlParams.get('key');
-        const savedKey = localStorage.getItem('app_access_key');
+      useEffect(() => {
+    const checkLicense = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const keyFromUrl = urlParams.get('key');
+      const idFromUrl = urlParams.get('id'); // Lấy Hardware ID từ link Panel gửi sang
+      const savedKey = localStorage.getItem('app_access_key');
 
-        // Nếu mã trên link là V0933676210, cho vào luôn và lưu lại
-        if (keyFromUrl === 'V0933676210') {
-            localStorage.setItem('app_access_key', keyFromUrl);
+      // 1. Nếu có đủ Key và ID trên link, tiến hành xác thực với Server
+      if (keyFromUrl && idFromUrl) {
+        try {
+          const response = await fetch("https://script.google.com/macros/s/AKfycbxSzjIgD9YSaYr26h3K426sTT2uZpC5TRC-pG5Ys-MSXejcgq9mibEKUaVEkQkkSSc/exec", {
+            method: 'POST',
+            body: JSON.stringify({ license_key: keyFromUrl, hardware_id: idFromUrl })
+          });
+          const result = await response.json();
+
+          if (result.success === true) {
+            // Khớp Hardware ID trên Sheets, cho phép vào
+            setIsAuthorized(true);
             setAccessKey(keyFromUrl);
-            setIsAuthorized(true);
-        } 
-        // Nếu không có trên link thì kiểm tra mã đã lưu hoặc mã hệ thống
-        else if (savedKey === requiredKey || !requiredKey || accessKey === requiredKey) {
-            setIsAuthorized(true);
-        } else {
+            localStorage.setItem('app_access_key', keyFromUrl);
+          } else {
+            // Không khớp ID máy hoặc Key hết hạn
+            setAccessError(result.message || "Thiết bị không hợp lệ!");
             setIsAuthorized(false);
+          }
+        } catch (error) {
+          setAccessError("Lỗi kết nối máy chủ xác thực!");
         }
-    }, [accessKey, requiredKey]);
+      } 
+      // 2. Nếu không có link mới, kiểm tra mã đã lưu cũ (Chỉ cho phép nếu máy đã kích hoạt)
+      else if (savedKey) {
+        setIsAuthorized(true);
+        setAccessKey(savedKey);
+      } else {
+        setIsAuthorized(false);
+      }
+    };
+
+    checkLicense();
+  }, []);
 
 
     const handleAccessSubmit = (e: Event) => {

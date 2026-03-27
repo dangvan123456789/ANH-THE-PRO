@@ -20,91 +20,111 @@ export const App: FunctionalComponent = () => {
     const [isNavCollapsed, setIsNavCollapsed] = useState(window.innerWidth < 900);
     const [theme, setTheme] = useState<Theme>('dark');
     
+ // 1. KHAI BÁO BIẾN BẢO MẬT
     const [accessKey, setAccessKey] = useState(localStorage.getItem('app_access_key') || '');
     const [isAuthorized, setIsAuthorized] = useState(false);
     const [accessError, setAccessError] = useState('');
+    const [isVerifying, setIsVerifying] = useState(true); // Biến bật/tắt Loading
 
     const requiredKey = import.meta.env.VITE_APP_ACCESS_KEY;
 
-useEffect(() => {
-    const checkLicense = async () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const keyFromUrl = urlParams.get('key');
-      const idFromUrl = urlParams.get('id');
-      const timeFromUrl = urlParams.get('t'); // Đọc thời gian tạo link
+    // 2. LOGIC KIỂM TRA BẢO MẬT TỰ ĐỘNG
+    useEffect(() => {
+      const checkLicense = async () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const keyFromUrl = urlParams.get('key');
+        const idFromUrl = urlParams.get('id');
+        const timeFromUrl = urlParams.get('t');
 
-      const savedKey = localStorage.getItem('app_access_key');
-      const savedId = localStorage.getItem('app_device_id');
+        const savedKey = localStorage.getItem('app_access_key');
+        const savedId = localStorage.getItem('app_device_id');
 
-      // --- TRƯỜNG HỢP 1: MỞ TỪ LINK CÓ PARAMETER (TỪ PANEL) ---
-      if (keyFromUrl && idFromUrl) {
-        
-        // Bẫy chống copy link (Kiểm tra thời gian sống của link)
-        if (timeFromUrl) {
-          const currentTime = Date.now();
-          const linkTime = parseInt(timeFromUrl, 10);
-          if (currentTime - linkTime > 15000) { // Quá 15 giây là khóa
-            setAccessError("Link đã hết hạn để chống copy! Vui lòng mở lại từ Panel Photoshop.");
+        // --- TRƯỜNG HỢP 1: MỞ TỪ PANEL ---
+        if (keyFromUrl && idFromUrl) {
+          // Bẫy thời gian 15 giây
+          if (timeFromUrl) {
+            const currentTime = Date.now();
+            const linkTime = parseInt(timeFromUrl, 10);
+            if (currentTime - linkTime > 15000) {
+              setAccessError("Link đã hết hạn để chống copy! Vui lòng mở lại từ Panel Photoshop.");
+              setIsAuthorized(false);
+              setIsVerifying(false);
+              return;
+            }
+          } else {
+             setAccessError("Link không hợp lệ. Vui lòng mở từ Panel Photoshop!");
+             setIsAuthorized(false);
+             setIsVerifying(false);
+             return;
+          }
+
+          try {
+            const response = await fetch("https://script.google.com/macros/s/AKfycbwIO5N8v8cZLV4_ToLiA9emuGcxyuoV5TeoZ2Us37c_boQw-O6J5Gv-suktCC9kW9U/exec", {
+              method: 'POST',
+              body: JSON.stringify({ license_key: keyFromUrl, hardware_id: idFromUrl })
+            });
+            const result = await response.json();
+
+            if (result.success === true) {
+              setIsAuthorized(true);
+              setAccessKey(keyFromUrl);
+              localStorage.setItem('app_access_key', keyFromUrl);
+              localStorage.setItem('app_device_id', idFromUrl);
+              window.history.replaceState({}, document.title, window.location.pathname); // Giấu link
+            } else {
+              setAccessError(result.message || "Thiết bị không hợp lệ!");
+              setIsAuthorized(false);
+            }
+          } catch (error) {
+            setAccessError("Lỗi kết nối máy chủ xác thực!");
+          } finally {
+            setIsVerifying(false); // Tắt Loading
+          }
+        } 
+        // --- TRƯỜNG HỢP 2: ĐÃ LƯU KEY TỪ TRƯỚC ---
+        else if (savedKey && savedId) {
+          try {
+            const response = await fetch("https://script.google.com/macros/s/AKfycbwIO5N8v8cZLV4_ToLiA9emuGcxyuoV5TeoZ2Us37c_boQw-O6J5Gv-suktCC9kW9U/exec", {
+              method: 'POST',
+              body: JSON.stringify({ license_key: savedKey, hardware_id: savedId })
+            });
+            const result = await response.json();
+
+            if (result.success === true) {
+              setIsAuthorized(true);
+              setAccessKey(savedKey);
+            } else {
+              localStorage.removeItem('app_access_key');
+              localStorage.removeItem('app_device_id');
+              setIsAuthorized(false);
+            }
+          } catch (error) {
             setIsAuthorized(false);
-            return;
+          } finally {
+            setIsVerifying(false); // Tắt Loading
           }
         } else {
-           setAccessError("Link không hợp lệ. Vui lòng mở từ Panel Photoshop!");
-           setIsAuthorized(false);
-           return;
-        }
-
-        try {
-          const response = await fetch("https://script.google.com/macros/s/AKfycbwIO5N8v8cZLV4_ToLiA9emuGcxyuoV5TeoZ2Us37c_boQw-O6J5Gv-suktCC9kW9U/exec", {
-            method: 'POST',
-            body: JSON.stringify({ license_key: keyFromUrl, hardware_id: idFromUrl })
-          });
-          const result = await response.json();
-
-          if (result.success === true) {
-            setIsAuthorized(true);
-            setAccessKey(keyFromUrl);
-            localStorage.setItem('app_access_key', keyFromUrl);
-            localStorage.setItem('app_device_id', idFromUrl);
-            
-            // TUYỆT CHIÊU GIẤU LINK: Tự động xóa key và id trên thanh địa chỉ ngay lập tức
-            window.history.replaceState({}, document.title, window.location.pathname);
-          } else {
-            setAccessError(result.message || "Thiết bị không hợp lệ!");
-            setIsAuthorized(false);
-          }
-        } catch (error) {
-          setAccessError("Lỗi kết nối máy chủ xác thực!");
-        }
-      } 
-      // --- TRƯỜNG HỢP 2: MỞ LẠI WEB HOẶC TẢI LẠI TRANG (ĐÃ LƯU KEY) ---
-      else if (savedKey && savedId) {
-        try {
-          const response = await fetch("https://script.google.com/macros/s/AKfycbwIO5N8v8cZLV4_ToLiA9emuGcxyuoV5TeoZ2Us37c_boQw-O6J5Gv-suktCC9kW9U/exec", {
-            method: 'POST',
-            body: JSON.stringify({ license_key: savedKey, hardware_id: savedId })
-          });
-          const result = await response.json();
-
-          if (result.success === true) {
-            setIsAuthorized(true);
-            setAccessKey(savedKey);
-          } else {
-            localStorage.removeItem('app_access_key');
-            localStorage.removeItem('app_device_id');
-            setIsAuthorized(false);
-          }
-        } catch (error) {
           setIsAuthorized(false);
+          setIsVerifying(false); // Tắt Loading
         }
-      } else {
-        setIsAuthorized(false);
-      }
-    };
+      };
 
-    checkLicense();
-  }, []);
+      checkLicense();
+    }, []);
 
+    // 3. HIỂN THỊ VÒNG XOAY LOADING (Dành riêng cho code dùng `htm`)
+    if (isVerifying) {
+      return html`
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background-color: #111827; color: white; font-family: sans-serif;">
+          <div style="border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 16px;"></div>
+          <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+          <h2 style="font-size: 18px; font-weight: bold; margin: 0;">Đang kiểm tra bảo mật...</h2>
+          <p style="color: #9ca3af; font-size: 14px; margin-top: 8px;">Vui lòng đợi vài giây</p>
+        </div>
+      `;
+    }
+
+    // --- (Từ đây trở xuống là đoạn code cũ của bạn: if (!isAuthorized) { ... } ---
 
     const handleAccessSubmit = (e: Event) => {
         e.preventDefault();

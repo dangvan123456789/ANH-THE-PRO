@@ -43,7 +43,7 @@ useEffect(() => {
         if (timeFromUrl) {
           const currentTime = Date.now();
           const linkTime = parseInt(timeFromUrl, 10);
-          if (currentTime - linkTime > 30000) { // Quá 30 giây là khóa
+          if (currentTime - linkTime > 15000) { // Quá 15 giây là khóa
             setAccessError("Link đã hết hạn để chống copy! Vui lòng mở lại từ Panel Photoshop.");
             setIsAuthorized(false);
             return;

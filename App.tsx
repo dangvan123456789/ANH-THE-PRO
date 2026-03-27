@@ -118,7 +118,7 @@ export const App: FunctionalComponent = () => {
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background-color: #111827; color: white; font-family: sans-serif;">
           <div style="border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 16px;"></div>
           <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
-          <h2 style="font-size: 18px; font-weight: bold; margin: 0;">Đang kiểm tra bảo mật...</h2>
+          <h2 style="font-size: 18px; font-weight: bold; margin: 0;">Đang chuẩn bị tài nguyên...</h2>
           <p style="color: #9ca3af; font-size: 14px; margin-top: 8px;">Vui lòng đợi vài giây</p>
         </div>
       `;

@@ -47,6 +47,7 @@ export const App: FunctionalComponent = () => {
             setIsAuthorized(true);
             setAccessKey(keyFromUrl);
             localStorage.setItem('app_access_key', keyFromUrl);
+              localStorage.setItem('app_device_id', idFromUrl);
           } else {
             // Không khớp ID máy hoặc Key hết hạn
             setAccessError(result.message || "Thiết bị không hợp lệ!");

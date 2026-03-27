@@ -36,7 +36,7 @@ export const App: FunctionalComponent = () => {
       // 1. Nếu có đủ Key và ID trên link, tiến hành xác thực với Server
       if (keyFromUrl && idFromUrl) {
         try {
-          const response = await fetch("https://script.google.com/macros/s/AKfycbxSzjIgD9YSaYr26h3K426sTT2uZpC5TRC-pG5Ys-MSXejcgq9mibEKUaVEkQkkSSc/exec", {
+          const response = await fetch("https://script.google.com/macros/s/AKfycbwIO5N8v8cZLV4_ToLiA9emuGcxyuoV5TeoZ2Us37c_boQw-O6J5Gv-suktCC9kW9U/exec", {
             method: 'POST',
             body: JSON.stringify({ license_key: keyFromUrl, hardware_id: idFromUrl })
           });

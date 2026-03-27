@@ -56,15 +56,33 @@ export const App: FunctionalComponent = () => {
           setAccessError("Lỗi kết nối máy chủ xác thực!");
         }
       } 
-      // 2. Nếu không có link mới, kiểm tra mã đã lưu cũ (Chỉ cho phép nếu máy đã kích hoạt)
+     // 2. Nếu không có link mới, kiểm tra mã đã lưu (Bắt buộc đối soát lại với Server)
       else if (savedKey) {
-        setIsAuthorized(true);
-        setAccessKey(savedKey);
+        try {
+          // Lấy ID máy đã lưu từ lần trước
+          const savedId = localStorage.getItem('app_device_id'); 
+          
+          const response = await fetch("https://script.google.com/macros/s/AKfycbxSzjIgD9YSaYr26h3K426sTT2uZpC5TRC-pG5Ys-MSXejcgq9mibEKUaVEkQkkSSc/exec", {
+            method: 'POST',
+            body: JSON.stringify({ license_key: savedKey, hardware_id: savedId })
+          });
+          const result = await response.json();
+
+          if (result.success === true) {
+            setIsAuthorized(true);
+            setAccessKey(savedKey);
+          } else {
+            // Nếu Server báo không khớp (do Key bị đổi ID trên Sheets), xóa sạch Cache
+            localStorage.removeItem('app_access_key');
+            localStorage.removeItem('app_device_id');
+            setIsAuthorized(false);
+          }
+        } catch (error) {
+          setIsAuthorized(false);
+        }
       } else {
         setIsAuthorized(false);
       }
-    };
-
     checkLicense();
   }, []);
 

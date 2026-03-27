@@ -80,7 +80,7 @@ useEffect(() => {
       // --- TRƯỜNG HỢP 2: MỞ LẠI WEB HOẶC TẢI LẠI TRANG (ĐÃ LƯU KEY) ---
       else if (savedKey && savedId) {
         try {
-          const response = await fetch("LINK_GOOGLE_SCRIPT_MOI_NHAT_CUA_BAN", {
+          const response = await fetch("https://script.google.com/macros/s/AKfycbwIO5N8v8cZLV4_ToLiA9emuGcxyuoV5TeoZ2Us37c_boQw-O6J5Gv-suktCC9kW9U/exec", {
             method: 'POST',
             body: JSON.stringify({ license_key: savedKey, hardware_id: savedId })
           });

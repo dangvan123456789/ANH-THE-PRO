@@ -26,30 +26,50 @@ export const App: FunctionalComponent = () => {
 
     const requiredKey = import.meta.env.VITE_APP_ACCESS_KEY;
 
-      useEffect(() => {
+useEffect(() => {
     const checkLicense = async () => {
       const urlParams = new URLSearchParams(window.location.search);
       const keyFromUrl = urlParams.get('key');
-      const idFromUrl = urlParams.get('id'); // Lấy Hardware ID từ link Panel gửi sang
-      const savedKey = localStorage.getItem('app_access_key');
+      const idFromUrl = urlParams.get('id');
+      const timeFromUrl = urlParams.get('t'); // Đọc thời gian tạo link
 
-      // 1. Nếu có đủ Key và ID trên link, tiến hành xác thực với Server
+      const savedKey = localStorage.getItem('app_access_key');
+      const savedId = localStorage.getItem('app_device_id');
+
+      // --- TRƯỜNG HỢP 1: MỞ TỪ LINK CÓ PARAMETER (TỪ PANEL) ---
       if (keyFromUrl && idFromUrl) {
+        
+        // Bẫy chống copy link (Kiểm tra thời gian sống của link)
+        if (timeFromUrl) {
+          const currentTime = Date.now();
+          const linkTime = parseInt(timeFromUrl, 10);
+          if (currentTime - linkTime > 30000) { // Quá 30 giây là khóa
+            setAccessError("Link đã hết hạn để chống copy! Vui lòng mở lại từ Panel Photoshop.");
+            setIsAuthorized(false);
+            return;
+          }
+        } else {
+           setAccessError("Link không hợp lệ. Vui lòng mở từ Panel Photoshop!");
+           setIsAuthorized(false);
+           return;
+        }
+
         try {
-          const response = await fetch("https://script.google.com/macros/s/AKfycbwIO5N8v8cZLV4_ToLiA9emuGcxyuoV5TeoZ2Us37c_boQw-O6J5Gv-suktCC9kW9U/exec", {
+          const response = await fetch("LINK_GOOGLE_SCRIPT_MOI_NHAT_CUA_BAN", {
             method: 'POST',
             body: JSON.stringify({ license_key: keyFromUrl, hardware_id: idFromUrl })
           });
           const result = await response.json();
 
           if (result.success === true) {
-            // Khớp Hardware ID trên Sheets, cho phép vào
             setIsAuthorized(true);
             setAccessKey(keyFromUrl);
             localStorage.setItem('app_access_key', keyFromUrl);
-              localStorage.setItem('app_device_id', idFromUrl);
+            localStorage.setItem('app_device_id', idFromUrl);
+            
+            // TUYỆT CHIÊU GIẤU LINK: Tự động xóa key và id trên thanh địa chỉ ngay lập tức
+            window.history.replaceState({}, document.title, window.location.pathname);
           } else {
-            // Không khớp ID máy hoặc Key hết hạn
             setAccessError(result.message || "Thiết bị không hợp lệ!");
             setIsAuthorized(false);
           }
@@ -57,13 +77,10 @@ export const App: FunctionalComponent = () => {
           setAccessError("Lỗi kết nối máy chủ xác thực!");
         }
       } 
-     // 2. Nếu không có link mới, kiểm tra mã đã lưu (Bắt buộc đối soát lại với Server)
-      else if (savedKey) {
+      // --- TRƯỜNG HỢP 2: MỞ LẠI WEB HOẶC TẢI LẠI TRANG (ĐÃ LƯU KEY) ---
+      else if (savedKey && savedId) {
         try {
-          // Lấy ID máy đã lưu từ lần trước
-          const savedId = localStorage.getItem('app_device_id'); 
-          
-          const response = await fetch("https://script.google.com/macros/s/AKfycbxSzjIgD9YSaYr26h3K426sTT2uZpC5TRC-pG5Ys-MSXejcgq9mibEKUaVEkQkkSSc/exec", {
+          const response = await fetch("LINK_GOOGLE_SCRIPT_MOI_NHAT_CUA_BAN", {
             method: 'POST',
             body: JSON.stringify({ license_key: savedKey, hardware_id: savedId })
           });
@@ -73,7 +90,6 @@ export const App: FunctionalComponent = () => {
             setIsAuthorized(true);
             setAccessKey(savedKey);
           } else {
-            // Nếu Server báo không khớp (do Key bị đổi ID trên Sheets), xóa sạch Cache
             localStorage.removeItem('app_access_key');
             localStorage.removeItem('app_device_id');
             setIsAuthorized(false);
@@ -84,6 +100,8 @@ export const App: FunctionalComponent = () => {
       } else {
         setIsAuthorized(false);
       }
+    };
+
     checkLicense();
   }, []);
 

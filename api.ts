@@ -14,7 +14,7 @@ const getMimeType = (dataUrl: string): string => {
 
 const getApiKey = (): string => {
     // Ưu tiên API_KEY từ hộp thoại chọn key, sau đó đến GEMINI_API_KEY mặc định
-    const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     if (apiKey && apiKey.trim() !== '') {
         return apiKey;
     }
